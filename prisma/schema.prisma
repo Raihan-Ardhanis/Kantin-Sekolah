@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id         Int       @id @default(autoincrement())
+  username   String    @unique @db.VarChar(100)
+  password   String    @db.VarChar(255)
+  role       role_enum
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  siswa      siswa?
+  stan       stan?
+}
+
+enum role_enum {
+  admin_stan
+  siswa
+}
+
+model siswa {
+  id         Int         @id @default(autoincrement())
+  nama_siswa String      @db.VarChar(100)
+  alamat     String?     @db.Text
+  telp       String?     @db.VarChar(20)
+  foto       String?     @db.VarChar(255)
+  id_user    Int         @unique
+  user       users       @relation(fields: [id_user], references: [id])
+  transaksi  transaksi[]
+}
+
+model stan {
+  id           Int         @id @default(autoincrement())
+  nama_stan    String      @db.VarChar(100)
+  nama_pemilik String      @db.VarChar(100)
+  telp         String?     @db.VarChar(20)
+  id_user      Int         @unique
+  user         users       @relation(fields: [id_user], references: [id])
+  menu         menu[]
+  transaksi    transaksi[]
+}
+
+model menu {
+  id               Int                @id @default(autoincrement())
+  nama_makanan     String             @db.VarChar(100)
+  harga            Float
+  jenis            jenis_enum
+  foto             String?            @db.VarChar(255)
+  deskripsi        String?            @db.Text
+  id_stan          Int
+  stan             stan               @relation(fields: [id_stan], references: [id])
+  menu_diskon      menu_diskon[]
+  detail_transaksi detail_transaksi[]
+}
+
+enum jenis_enum {
+  makanan
+  minuman
+}
+
+model diskon {
+  id                Int           @id @default(autoincrement())
+  nama_diskon       String        @db.VarChar(100)
+  persentase_diskon Float
+  tanggal_awal      DateTime
+  tanggal_akhir     DateTime
+  menu_diskon       menu_diskon[]
+}
+
+model menu_diskon {
+  id        Int    @id @default(autoincrement())
+  id_menu   Int
+  id_diskon Int
+  menu      menu   @relation(fields: [id_menu], references: [id])
+  diskon    diskon @relation(fields: [id_diskon], references: [id])
+}
+
+model transaksi {
+  id               Int                @id @default(autoincrement())
+  tanggal          DateTime           @default(now())
+  id_stan          Int
+  id_siswa         Int
+  status           status_enum        @default(belum_dikonfirm)
+  stan             stan               @relation(fields: [id_stan], references: [id])
+  siswa            siswa              @relation(fields: [id_siswa], references: [id])
+  detail_transaksi detail_transaksi[]
+}
+
+enum status_enum {
+  belum_dikonfirm
+  dimasak
+  diantar
+  sampai
+}
+
+model detail_transaksi {
+  id           Int       @id @default(autoincrement())
+  id_transaksi Int
+  id_menu      Int
+  qty          Int
+  harga_beli   Float
+  transaksi    transaksi @relation(fields: [id_transaksi], references: [id])
+  menu         menu      @relation(fields: [id_menu], references: [id])
+}
